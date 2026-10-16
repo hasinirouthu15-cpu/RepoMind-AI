@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoMind AI</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #0b1020;
+      color: #eef2ff;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 7%;
+      border-bottom: 1px solid #26304a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 23px; font-weight: 800; }
+    .logo span { color: #8b7cff; }
+    .status { color: #86efac; font-size: 13px; }
+    main { max-width: 900px; margin: 65px auto; padding: 0 22px; }
+    .tag {
+      color: #b5aaff;
+      border: 1px solid #393263;
+      background: #17152f;
+      border-radius: 30px;
+      padding: 8px 13px;
+      display: inline-block;
+      font-size: 12px;
+    }
+    h1 { font-size: clamp(34px, 6vw, 56px); margin: 24px 0 12px; }
+    h1 span {
+      background: linear-gradient(90deg, #a99cff, #6ee7f9);
+      color: transparent;
+      background-clip: text;
+    }
+    .subtitle { color: #a6b0ca; line-height: 1.7; }
+    .panel {
+      margin-top: 35px;
+      background: #121a2d;
+      border: 1px solid #2b3651;
+      border-radius: 18px;
+      padding: 20px;
+    }
+    label { display: block; margin-bottom: 12px; font-weight: 600; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      background: #0b1020;
+      border: 1px solid #303b58;
+      color: white;
+      border-radius: 12px;
+      padding: 15px;
+      font: inherit;
+      outline: none;
+    }
+    textarea:focus { border-color: #9384ff; }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #8b7cff;
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .hint { color: #8d9ab8; font-size: 12px; }
+    #result {
+      display: none;
+      margin-top: 24px;
+      padding: 22px;
+      border-radius: 14px;
+      border: 1px solid #33405f;
+      background: #10182a;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    #result h2 { margin-top: 0; font-size: 18px; }
+    #answer { color: #d9e2f7; }
+    .examples { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .example {
+      color: #cbd5f5;
+      background: #151d31;
+      border: 1px solid #2b3651;
+      padding: 10px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    footer { text-align: center; color: #7886a5; font-size: 12px; padding: 35px 15px; }
+    @media (max-width: 600px) {
+      main { margin-top: 38px; }
+      header { padding: 18px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">RepoMind <span>AI</span></div>
+    <div class="status">● Local AI powered</div>
+  </header>
+
+  <main>
+    <span class="tag">YOUR AI CODEBASE COMPANION</span>
+    <h1>Understand code.<br><span>Think smarter.</span></h1>
+    <p class="subtitle">
+      Ask questions, explore ideas, and get AI-powered explanations
+      with your locally running Gemma model.
+    </p>
+
+    <section class="panel">
+      <label for="question">Ask RepoMind AI</label>
+      <textarea id="question" placeholder="Ask anything about Python, code, or software development..."></textarea>
+      <div class="actions">
+        <span class="hint">Powered by your local Ollama model</span>
+        <button id="askButton" onclick="askAI()">Ask AI ↗</button>
+      </div>
+
+      <div class="examples">
+        <button class="example" onclick="useExample('Explain Python in simple words')">Explain Python</button>
+        <button class="example" onclick="useExample('What is a software bug and how can I debug it?')">Debugging basics</button>
+        <button class="example" onclick="useExample('Explain how Git works')">Understand Git</button>
+      </div>
+    </section>
+
+    <section id="result" aria-live="polite">
+      <h2 id="resultTitle">✦ AI Response</h2>
+      <div id="answer"></div>
+    </section>
+  </main>
+
+  <footer>RepoMind AI · Built with FastAPI + Ollama · Local AI</footer>
+
+  <script>
+    const questionBox = document.getElementById("question");
+    const askButton = document.getElementById("askButton");
+    const result = document.getElementById("result");
+    const answer = document.getElementById("answer");
+    const resultTitle = document.getElementById("resultTitle");
+
+    function useExample(text) {
+      questionBox.value = text;
+      questionBox.focus();
+    }
+
+    async function askAI() {
+      const question = questionBox.value.trim();
+
+      if (!question) {
+        questionBox.focus();
+        answer.textContent = "Please enter a question first.";
+        result.style.display = "block";
+        resultTitle.textContent = "Question required";
+        return;
+      }
+
+      askButton.disabled = true;
+      askButton.textContent = "Thinking...";
+      result.style.display = "block";
+      resultTitle.textContent = "✦ AI is thinking...";
+      answer.textContent = "Connecting to RepoMind AI. Please wait...";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || data.error || "Request failed");
+        }
+        if (data.error) throw new Error(data.error);
+
+        resultTitle.textContent = "✦ AI Response";
+        answer.textContent = data.answer || "The AI returned an empty answer.";
+      } catch (error) {
+        resultTitle.textContent = "Connection issue";
+        answer.textContent =
+          "Could not connect to the backend. Make sure the FastAPI server is running at http://127.0.0.1:8000. Details: " +
+          error.message;
+      } finally {
+        askButton.disabled = false;
+        askButton.textContent = "Ask AI ↗";
+      }
+    }
+
+    questionBox.addEventListener("keydown", event => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) askAI();
+    });
+  </script>
+</body>
+</html>
